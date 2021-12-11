@@ -48,7 +48,7 @@ class UserpFedMe(User):
                 loss = self.loss(output, y)
                 loss.backward()
                 self.persionalized_model_bar, _ = self.optimizer.step(self.local_model)
-
+            
             # update local weight after finding aproximate theta
             for new_param, localweight in zip(self.persionalized_model_bar, self.local_model):
                 localweight.data = localweight.data - self.lamda* self.learning_rate * (localweight.data - new_param.data)
@@ -56,5 +56,6 @@ class UserpFedMe(User):
         #update local model as local_weight_upated
         #self.clone_model_paramenter(self.local_weight_updated, self.local_model)
         self.update_parameters(self.local_model)
+        self.learning_rate *= 0.95
 
         return LOSS

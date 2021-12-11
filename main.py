@@ -12,6 +12,7 @@ from FLAlgorithms.servers.serverperavg import PerAvg
 from FLAlgorithms.trainmodel.models import *
 from utils.plot_utils import *
 import torch
+import torchvision.models as tormodels
 torch.manual_seed(0)
 
 def main(dataset, algorithm, model, batch_size, learning_rate, beta, lamda, num_glob_iters,
@@ -34,12 +35,23 @@ def main(dataset, algorithm, model, batch_size, learning_rate, beta, lamda, num_
                 model = Net().to(device), model
             elif(dataset == "Cifar10"):
                 model = CNNCifar(10).to(device), model
-            
+            elif dataset == 'EMNIST':
+                model = MNISTCnn(62).to(device), model
+            elif dataset == 'merge':
+                model = MNISTCnn(15).to(device), model
+                
+            else:
+                #model = EMNISTCNN(62).to(device), model
+                model = MNISTCnn().to(device), model
         if(model == "dnn"):
             if(dataset == "Mnist"):
                 model = DNN().to(device), model
             else: 
                 model = DNN(60,20,10).to(device), model
+        if model == 'resnet':
+            if(dataset == "EMNIST"):
+                model =  tormodels.__dict__['resnet18'](num_classes=62), model
+
 
         # select algorithm
         if(algorithm == "FedAvg"):
@@ -63,14 +75,14 @@ def main(dataset, algorithm, model, batch_size, learning_rate, beta, lamda, num_
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", type=str, default="EMNSIT", choices=["Mnist", "Synthetic", "Cifar10","EMNSIT"])
-    parser.add_argument("--model", type=str, default="cnn", choices=["dnn", "mclr", "cnn"])
-    parser.add_argument("--batch_size", type=int, default=20)
+    parser.add_argument("--dataset", type=str, default="EMNIST", choices=["Mnist", "Synthetic", "Cifar10","EMNIST",'merge'])
+    parser.add_argument("--model", type=str, default="cnn", choices=["dnn", "mclr", "cnn","resnet"])
+    parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--learning_rate", type=float, default=0.005, help="Local learning rate")
     parser.add_argument("--beta", type=float, default=1.0, help="Average moving parameter for pFedMe, or Second learning rate of Per-FedAvg")
     parser.add_argument("--lamda", type=int, default=15, help="Regularization term")
     parser.add_argument("--num_global_iters", type=int, default=800)
-    parser.add_argument("--local_epochs", type=int, default=20)
+    parser.add_argument("--local_epochs", type=int, default=10)
     parser.add_argument("--optimizer", type=str, default="SGD")
     parser.add_argument("--algorithm", type=str, default="pFedMe",choices=["pFedMe", "PerAvg", "FedAvg"]) 
     parser.add_argument("--numusers", type=int, default=20, help="Number of Users per round")

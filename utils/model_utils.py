@@ -194,49 +194,7 @@ def read_cifa_data():
         train_data['num_samples'].append(train_len)
         
         
-    # random.seed(1)
-    # np.random.seed(1)
-    # NUM_USERS = 1 # should be muitiple of 10
-    # NUM_LABELS = 10
-    # # Setup directory for train/test data
-    # cifa_data_image = []
-    # cifa_data_label = []
-
-    # cifa_data_image.extend(trainset.data.cpu().detach().numpy())
-    # cifa_data_label.extend(trainset.targets.cpu().detach().numpy())
-
-    # cifa_data_image = np.array(cifa_data_image)
-    # cifa_data_label = np.array(cifa_data_label)
-
-    # # Create data structure
-    # train_data = {'users': [], 'user_data':{}, 'num_samples':[]}
-
-    # # Setup 5 users
-    # # for i in trange(5, ncols=120):
-    # for i in range(NUM_USERS):
-    #     uname = 'f_{0:05d}'.format(i)
-    #     train_data['users'].append(uname) 
-    #     train_data['user_data'][uname] = {'x': cifa_data_image.tolist(), 'y': cifa_data_label.tolist()}
-    #     train_data['num_samples'].append(len(cifa_data_image))
-
-    # #-----------------------------------TEst -------------------------------------#
-    # cifa_data_image_test = []
-    # cifa_data_label_test = []
-    # cifa_data_image_test.extend(testset.data.cpu().detach().numpy())
-    # cifa_data_label_test.extend(testset.targets.cpu().detach().numpy())
-    # cifa_data_image_test = np.array(cifa_data_image_test)
-    # cifa_data_label_test = np.array(cifa_data_label_test)
-
-    # cifa_data = []
-
-    # # Create data structure
-    # test_data = {'users': [], 'user_data':{}, 'num_samples':[]}
-    
-    # for i in range(NUM_USERS):
-    #     num_samples = len(cifa_data_image_test)
-    #     test_data['users'].append(uname) 
-    #     test_data['user_data'][uname] = {'x': cifa_data_image_test.tolist(), 'y': cifa_data_label_test.tolist()}
-    #     test_data['num_samples'].append(num_samples)
+        
 
     return train_data['users'], _ , train_data['user_data'], test_data['user_data']
 
@@ -264,7 +222,7 @@ def read_user_data(index,data,dataset):
     train_data = data[2][id]
     test_data = data[3][id]
     X_train, y_train, X_test, y_test = train_data['x'], train_data['y'], test_data['x'], test_data['y']
-    if(dataset == "Mnist"):
+    if(dataset == "Mnist" or dataset == 'EMNIST' ):
         X_train, y_train, X_test, y_test = train_data['x'], train_data['y'], test_data['x'], test_data['y']
         X_train = torch.Tensor(X_train).view(-1, NUM_CHANNELS, IMAGE_SIZE, IMAGE_SIZE).type(torch.float32)
         y_train = torch.Tensor(y_train).type(torch.int64)
@@ -329,8 +287,8 @@ class Metrics(object):
 
 
 def read_dataset(data = 'Cifar10'):
-    transform = transforms.Compose([transforms.ToTensor(),transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
     if data == 'Cifar10':
+        transform = transforms.Compose([transforms.ToTensor(),transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
         trainset = torchvision.datasets.CIFAR10(root='./data', train=True,download=True, transform=transform)
         testset = torchvision.datasets.CIFAR10(root='./data', train=False,download=True, transform=transform)
 
@@ -340,11 +298,33 @@ def read_dataset(data = 'Cifar10'):
         num_class =  10
         
     elif data == 'EMNIST' :
+        
+        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.1307], [0.3081])])
         trainset = torchvision.datasets.EMNIST(root='./data',split="byclass", train=True,download=True, transform=transform)
         testset = torchvision.datasets.EMNIST(root='./data', split="byclass", train=False,download=True, transform=transform)
-        train_path = './data/train/cifa_train_100.json'
-        test_path = './data/test/cifa_test_100.json'
-        num_class  =62
+        train_path = './data/train/emnist.json'
+        test_path = './data/test/emnist.json'
+        num_class  = 62
+        
+        
+    elif data == 'merge' :
+        
+        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.1307], [0.3081])])
+        trainset = torchvision.datasets.EMNIST(root='./data',split="bymerge", train=True,download=True, transform=transform)
+        testset = torchvision.datasets.EMNIST(root='./data', split="bymerge", train=False,download=True, transform=transform)
+        train_path = './data/train/merge.json'
+        test_path = './data/test/merge.json'
+        num_class  = 15
+        
+        
+    elif data == 'Mnist' :
+        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.1307], [0.3081])])
+        trainset = torchvision.datasets.EMNIST(root='./data',split="mnist", train=True,download=True, transform=transform)
+        testset = torchvision.datasets.EMNIST(root='./data', split="mnist", train=False,download=True, transform=transform)
+        train_path = './data/train/mnist.json'
+        test_path = './data/test/mnist.json'
+        num_class  = 10
+        
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=len(trainset.data),shuffle=False)
     testloader = torch.utils.data.DataLoader(testset, batch_size=len(testset.data),shuffle=False)
 
@@ -353,8 +333,8 @@ def read_dataset(data = 'Cifar10'):
     for _, train_data in enumerate(testloader,0):
         testset.data, testset.targets = train_data
 
-    NUM_USERS = 20 # should be muitiple of 10
-    NUM_LABELS = 3
+    NUM_USERS = 100 # should be muitiple of 10
+    NUM_LABELS = 5
     random.seed(1)
     np.random.seed(1)
     dir_path = os.path.dirname(train_path)
@@ -379,7 +359,6 @@ def read_dataset(data = 'Cifar10'):
         idx = cifa_data_label==i
         cifa_data.append(cifa_data_image[idx])
 
-
     print("\nNumb samples of each label:\n", [len(v) for v in cifa_data])
     users_lables = []
 
@@ -387,22 +366,24 @@ def read_dataset(data = 'Cifar10'):
     # Assign 100 samples to each user
     X = [[] for _ in range(NUM_USERS)]
     y = [[] for _ in range(NUM_USERS)]
+    
     idx = np.zeros(num_class, dtype=np.int64)
+    num_assign = 10
     for user in range(NUM_USERS):
         for j in range(NUM_LABELS):  # 3 labels for each users
             #l = (2*user+j)%10
-            l = (user + j) % 10
-            print("L:", l)
-            X[user] += cifa_data[l][idx[l]:idx[l]+10].tolist()
-            y[user] += (l*np.ones(10)).tolist()
-            idx[l] += 10
+            l = (user + j) % num_class
+            #print("L:", l)
+            X[user] += cifa_data[l][idx[l]:idx[l]+num_assign].tolist()
+            y[user] += (l*np.ones(num_assign)).tolist()
+            idx[l] += num_assign
 
     print("IDX1:", idx)  # counting samples for each labels
 
     # Assign remaining sample by power law
     user = 0
     props = np.random.lognormal(
-        0, 2., (10, NUM_USERS, NUM_LABELS))  # last 5 is 5 labels
+        0, 2., (num_class, NUM_USERS, NUM_LABELS))  # last 5 is 5 labels
     props = np.array([[[len(v)-NUM_USERS]] for v in cifa_data]) * \
         props/np.sum(props, (1, 2), keepdims=True)
     # print("here:",props/np.sum(props,(1,2), keepdims=True))
@@ -412,9 +393,9 @@ def read_dataset(data = 'Cifar10'):
     # print("here2:",props)
     for user in trange(NUM_USERS):
         for j in range(NUM_LABELS):  # 4 labels for each users
-            # l = (2*user+j)%10
-            l = (user + j) % 10
-            num_samples = int(props[l, user//int(NUM_USERS/10), j])
+            # l = (2*user+j) % 10
+            l = (user + j) % num_class
+            num_samples = int(props[l, user//max(int(NUM_USERS/num_class),1), j])
             numran1 = random.randint(300, 600)
             num_samples = (num_samples)  + numran1 #+ 200
             if(NUM_USERS <= 20): 
@@ -434,25 +415,29 @@ def read_dataset(data = 'Cifar10'):
 
     # Setup 5 users
     # for i in trange(5, ncols=120):
+    print('user data size: ', [len(X[i]) for i in range(NUM_USERS)])
     for i in range(NUM_USERS):
-        uname = i
-        combined = list(zip(X[i], y[i]))
-        random.shuffle(combined)
-        X[i][:], y[i][:] = zip(*combined)
-
-        num_samples = len(X[i])
-        train_len = int(0.75*num_samples)
-        test_len = num_samples - train_len
-
-        #X_train, X_test, y_train, y_test = train_test_split(X[i], y[i], train_size=0.75, stratify=y[i])\
-        
-        test_data['users'].append(uname)
-        test_data["user_data"][uname] =  {'x': X[i][:test_len], 'y': y[i][:test_len]} 
-        test_data['num_samples'].append(test_len)
-
-        train_data["user_data"][uname] =  {'x': X[i][test_len:], 'y': y[i][test_len:]}
-        train_data['users'].append(uname)
-        train_data['num_samples'].append(train_len)
-         
-
+        try:
+            uname = i
+            combined = list(zip(X[i], y[i]))
+            random.shuffle(combined)
+            X[i][:], y[i][:] = zip(*combined)
+    
+            num_samples = len(X[i])
+            train_len = int(0.75*num_samples)
+            test_len = num_samples - train_len
+    
+            #X_train, X_test, y_train, y_test = train_test_split(X[i], y[i], train_size=0.75, stratify=y[i])\
+            
+            test_data['users'].append(uname)
+            test_data["user_data"][uname] =  {'x': X[i][:test_len], 'y': y[i][:test_len]} 
+            test_data['num_samples'].append(test_len)
+    
+            train_data["user_data"][uname] =  {'x': X[i][test_len:], 'y': y[i][test_len:]}
+            train_data['users'].append(uname)
+            train_data['num_samples'].append(train_len)
+        except ValueError:
+            print("user ",i," get wrong")
+        else:
+            print("Something else wrong")
     return train_data['users'], _ , train_data['user_data'], test_data['user_data']
